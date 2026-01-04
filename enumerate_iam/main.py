@@ -22,6 +22,7 @@ import logging
 import boto3
 import botocore
 import random
+import threading
 
 from botocore.client import Config
 from botocore.endpoint import MAX_POOL_CONNECTIONS
@@ -33,6 +34,11 @@ from enumerate_iam.bruteforce_tests import BRUTEFORCE_TESTS
 
 MAX_THREADS = 25
 CLIENT_POOL = {}
+
+# Global counter for progress tracking
+progress_counter = 0
+progress_lock = threading.Lock()
+total_operations = 0
 
 
 def report_arn(candidate):
@@ -62,10 +68,18 @@ def enumerate_using_bruteforce(access_key, secret_key, session_token, region):
     """
     Attempt to brute-force common describe calls.
     """
+    global progress_counter, total_operations
+
     output = dict()
 
     logger = logging.getLogger()
+
+    # Count total operations
+    total_operations = sum(len(operations) for operations in BRUTEFORCE_TESTS.values())
+    progress_counter = 0
+
     logger.info('Attempting common-service describe / list brute force.')
+    logger.info('Testing %d operations across %d services...' % (total_operations, len(BRUTEFORCE_TESTS)))
 
     pool = ThreadPool(MAX_THREADS)
     args_generator = generate_args(access_key, secret_key, session_token, region)
@@ -96,6 +110,8 @@ def enumerate_using_bruteforce(access_key, secret_key, session_token, region):
 
     pool.close()
     pool.join()
+
+    logger.info('Completed testing %d operations' % total_operations)
 
     return output
 
@@ -149,8 +165,20 @@ def get_client(access_key, secret_key, session_token, service_name, region):
 
 
 def check_one_permission(arg_tuple):
+    global progress_counter, total_operations
+
     access_key, secret_key, session_token, region, service_name, operation_name = arg_tuple
     logger = logging.getLogger()
+
+    # Increment and report progress
+    with progress_lock:
+        progress_counter += 1
+        current = progress_counter
+
+    # Show progress every 100 operations or at milestones
+    if current % 100 == 0 or current == total_operations:
+        logger.info('Progress: %d/%d operations tested (%.1f%%)' %
+                   (current, total_operations, (current * 100.0 / total_operations)))
 
     service_client = get_client(access_key, secret_key, session_token, service_name, region)
     if service_client is None:
