@@ -3,6 +3,10 @@
 Found a set of AWS credentials and have no idea which permissions it might have?
 
 ```console
+# Using AWS profile from ~/.aws/credentials
+$ enumerate-iam --profile myprofile
+
+# Or using explicit credentials
 $ ./enumerate-iam.py --access-key AKIA... --secret-key StF0q...
 2019-05-10 15:57:58,447 - 21345 - [INFO] Starting permission enumeration for access-key-id "AKIA..."
 2019-05-10 15:58:01,532 - 21345 - [INFO] Run for the hills, get_account_authorization_details worked!
@@ -30,7 +34,31 @@ calls are performed).
 
 ## Installation
 
+### Using uv (recommended)
+
+[uv](https://github.com/astral-sh/uv) is a fast Python package installer and resolver.
+
+```bash
+git clone git@github.com:andresriancho/enumerate-iam.git
+cd enumerate-iam/
+uv sync
 ```
+
+This will create a virtual environment in `.venv/` and install all dependencies.
+
+Then run with:
+```bash
+# Using the uv-managed command
+.venv/bin/enumerate-iam --profile myprofile
+
+# Or activate the venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+enumerate-iam --profile myprofile
+```
+
+### Using pip (traditional)
+
+```bash
 git clone git@github.com:andresriancho/enumerate-iam.git
 cd enumerate-iam/
 pip install -r requirements.txt
