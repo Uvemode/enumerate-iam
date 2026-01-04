@@ -161,7 +161,7 @@ def check_one_permission(arg_tuple):
     except AttributeError:
         # The service might not have this action (this is most likely
         # an error with generate_bruteforce_tests.py)
-        logger.error('Remove %s.%s action' % (service_name, operation_name))
+        logger.debug('Operation not found: %s.%s' % (service_name, operation_name))
         return
 
     logger.debug('Testing %s.%s() in region %s' % (service_name, operation_name, region))
@@ -174,7 +174,7 @@ def check_one_permission(arg_tuple):
             botocore.exceptions.ReadTimeoutError):
         return
     except botocore.exceptions.ParamValidationError:
-        logger.error('Remove %s.%s action' % (service_name, operation_name))
+        logger.debug('Operation requires parameters: %s.%s' % (service_name, operation_name))
         return
 
     msg = '-- %s.%s() worked!'
